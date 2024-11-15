@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Products</title>
+    <link rel="stylesheet" href="product.css">
+
+</head>
+<body>
+
+<header>
+    <h1>Welcome to Our Products</h1>
+    <button id="Ansh" onclick="window.location.href = '/cart.html'">Go to Cart</button>
+</header>
+
+<div class="alert" id="alert"></div>
+
+<div class="product-container" id="products">
+    <!-- Products will be loaded here dynamically -->
+</div>
+
+<script>
+    // Function to load products when the page loads
+    async function loadProducts() {
+        try {
+            const response = await fetch('/api/products');  // Fetch products from the backend API
+            const products = await response.json();         // Parse JSON response
+            
+            // Get the products container from the DOM
+            const productsContainer = document.getElementById('products');
+            
+            // Clear any existing content in the container
+            productsContainer.innerHTML = '';
+            
+            // Loop through each product and create HTML to display
+            products.forEach(product => {
+                const productDiv = document.createElement('div');
+                productDiv.classList.add('product'); // Add 'product' class for styling
+                
+                // Add HTML content for each product
+                productDiv.innerHTML = `
+                    <img src="${product.image_url}" alt="${product.name}" style="width: 300px; height: 300px;" />
+                    <h3>${product.name}</h3>
+                    <p>$${product.price}</p>
+                    <button onclick="addToCart(${product.id})">Add to Cart</button>
+                `;
+                
+                // Append the product div to the products container
+                productsContainer.appendChild(productDiv);
+            });
+        } catch (error) {
+            console.error('Error fetching products:', error);
+            showAlert('Error fetching products. Please try again later.', 'error');
+        }
+    }
+
+    // Function to handle adding a product to the cart
+    async function addToCart(productId) {
+        const token = localStorage.getItem('token');
+        console.log('Retrieved Token:', token);
+        if (!token) {
+            showAlert('Please log in first to add products to the cart.', 'error');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/cart', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ productId })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                showAlert(data.message, 'success');
+            } else {
+                showAlert('Failed to add product to the cart.', 'error');
+            }
+        } catch (error) {
+            console.error('Error adding product to cart:', error);
+            showAlert('Error adding product to cart. Please try again.', 'error');
+        }
+    }
+
+    // Function to show alerts
+    function showAlert(message, type) {
+        const alertBox = document.getElementById('alert');
+        alertBox.textContent = message;
+        alertBox.classList.remove('success', 'error');
+        alertBox.classList.add(type);
+        alertBox.style.display = 'block';
+
+        setTimeout(() => {
+            alertBox.style.display = 'none';
+        }, 3000);
+    }
+
+    // Call the loadProducts function when the page loads
+    window.onload = loadProducts;
+</script>
+
+</body>
+</html>

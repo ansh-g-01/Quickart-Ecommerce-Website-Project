@@ -1,0 +1,73 @@
+/* General styling for the page */
+
+.button
+{
+  AL;
+}
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f9;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+  }
+  
+  .stats-container {
+    width: 90%;
+    max-width: 800px;
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    padding: 20px;
+    box-sizing: border-box;
+  }
+  .stats-container button
+  {
+    padding: 10px;
+    border-radius: 5px;
+    background-color: green;
+  }
+  
+  h1 {
+    font-size: 2rem;
+    text-align: center;
+    color: #333;
+  }
+  
+  .stats-section {
+    margin-top: 20px;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: #fafafa;
+  }
+  
+  h2 {
+    font-size: 1.4rem;
+    color: #007bff;
+    margin-bottom: 10px;
+  }
+  
+  .stats-text {
+    font-size: 1.1rem;
+    color: #555;
+  }
+  
+  canvas {
+    margin-top: 10px;
+    max-width: 100%;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 600px) {
+    h1 {
+      font-size: 1.8rem;
+    }
+  
+    h2 {
+      font-size: 1.2rem;
+    }
+  }

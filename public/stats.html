@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stats</title>
+  <link rel="stylesheet" href="stats.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    
+  <div class="stats-container">
+    <h1>Statistics</h1>
+    <button onclick="window.location.href='userData.html'">View User Data</button>
+
+    <div class="stats-section">
+      <h2>Top User by Purchases</h2>
+      <p id="topUserName" class="stats-text"></p>
+    </div>
+
+    <div class="stats-section">
+      <h2>Most Bought Product</h2>
+      <p id="topProductName" class="stats-text"></p>
+    </div>
+
+    <div class="stats-section">
+      <h2>Product Purchase Frequency</h2>
+      <canvas id="productChart" width="400" height="200"></canvas>
+    </div>
+  </div>
+
+  <script src="stats.js"></script>
+</body>
+</html>
