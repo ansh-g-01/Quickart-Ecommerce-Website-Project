@@ -49,7 +49,7 @@ if (signupForm) {
             localStorage.setItem('token', data.token);
             alert('Login Successful'); // Concatenate the string and token
 
-            window.location.href = 'http://localhost:3000/products.html';
+            window.location.href = 'http://localhost:3000/Functions/products.html';
         } else {
             alert('Login failed');
         }

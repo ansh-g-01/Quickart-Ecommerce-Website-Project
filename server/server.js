@@ -13,13 +13,12 @@ require('dotenv').config({ path: 'C:/Users/DELL/Downloads/Shopping Website DBMS/
 app.use(bodyParser.json());  // To parse incoming JSON data
 app.use(cors());  // Enable CORS
 app.use(express.static(path.join(__dirname,'..', 'public')));
-console.log(__dirname);
-// User Registration Route
 
-app.get("/", (req, res) => {
-    res.send("Welcome to the Shopping Website API!");
+;
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname,'..','public', 'LandingPage', 'index.html'));
 });
-    
 // Route to handle signup (POST)
 app.post("/api/signup", async (req, res) => {
     const { username, password } = req.body; // Receive username and password
@@ -157,10 +156,6 @@ app.get('/api/cart', async (req, res) => {
   }
 });
 
-// Serve cart.html for the /cart route
-app.get("/cart", (req, res) => {
-  res.sendFile(path.join(__dirname, "cart.html"));
-});
 
 
 // Cart API route - Retrieve cart for logged-in user
@@ -196,53 +191,77 @@ app.get('/products.html', (req, res) => {
 });
 
 
-app.get("/api/stats", async (req, res) => {
-    let connection;
-    try {
-      connection = await oracledb.getConnection(dbConfig);
-  
-      // Query to get user with the highest purchases
-      const userResult = await connection.execute(`
-        SELECT u.username, COUNT(c.product_id) AS purchase_count
-        FROM USERS u
-        JOIN CART c ON u.user_id = c.user_id
-        GROUP BY u.username
-        ORDER BY purchase_count DESC FETCH FIRST 1 ROWS ONLY
-      `);
-  
-      // Query to get the most-bought product
-      const productResult = await connection.execute(`
-        SELECT p.name, COUNT(c.product_id) AS times_bought
-        FROM PRODUCTS p
-        JOIN CART c ON p.product_id = c.product_id
-        GROUP BY p.name
-        ORDER BY times_bought DESC FETCH FIRST 1 ROWS ONLY
-      `);
-  
-      // Query to get all products and their purchase frequencies
-      const productGraphData = await connection.execute(`
-        SELECT p.name, COUNT(c.product_id) AS times_bought
-        FROM PRODUCTS p
-        JOIN CART c ON p.product_id = c.product_id
-        GROUP BY p.name
-        ORDER BY times_bought DESC
-      `);
-  
-      res.json({
-        topUser: userResult.rows[0],
-        topProduct: productResult.rows[0],
-        productGraphData: productGraphData.rows
-      });
-  
-    } catch (err) {
-      console.error("Error fetching stats:", err);
-      res.status(500).send("Error fetching stats");
-    } finally {
-      if (connection) {
-        await connection.close();
-      }
+app.get('/api/stats', async (req, res) => {
+    // Get the token from the Authorization header
+    const token = req.headers.authorization?.split(' ')[1];
+
+    // If no token is provided, return Unauthorized (401)
+    if (!token) {
+        return res.status(401).json({ message: 'Unauthorized: No token provided' });
     }
-  });
+
+    try {
+        // Verify the token and decode the payload
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        
+
+        // If the user is an admin, proceed to fetch the stats
+
+        let connection;
+        try {
+            connection = await oracledb.getConnection(dbConfig);
+
+            // Query to get the user with the highest purchases
+            const userResult = await connection.execute(`
+                SELECT u.username, COUNT(c.product_id) AS purchase_count
+                FROM USERS u
+                JOIN CART c ON u.user_id = c.user_id
+                GROUP BY u.username
+                ORDER BY purchase_count DESC FETCH FIRST 1 ROWS ONLY
+            `);
+
+            // Query to get the most-bought product
+            const productResult = await connection.execute(`
+                SELECT p.name, COUNT(c.product_id) AS times_bought
+                FROM PRODUCTS p
+                JOIN CART c ON p.product_id = c.product_id
+                GROUP BY p.name
+                ORDER BY times_bought DESC FETCH FIRST 1 ROWS ONLY
+            `);
+
+            // Query to get all products and their purchase frequencies
+            const productGraphData = await connection.execute(`
+                SELECT p.name, COUNT(c.product_id) AS times_bought
+                FROM PRODUCTS p
+                JOIN CART c ON p.product_id = c.product_id
+                GROUP BY p.name
+                ORDER BY times_bought DESC
+            `);
+
+            // Respond with the stats data
+            res.json({
+                topUser: userResult.rows[0],
+                topProduct: productResult.rows[0],
+                productGraphData: productGraphData.rows
+            });
+
+        } catch (err) {
+            console.error('Error fetching stats:', err);
+            res.status(500).send('Error fetching stats');
+        } finally {
+            if (connection) {
+                await connection.close();
+            }
+        }
+
+    } catch (err) {
+        // If the token is invalid or expired
+        console.error('Error:', err);
+        return res.status(401).json({ message: 'Unauthorized: Invalid or expired token' });
+    }
+});
+
 
   app.get('/api/usersData', async (req, res) => {
     let connection;
@@ -291,8 +310,45 @@ app.get("/api/stats", async (req, res) => {
 });
 
 
+app.post('/api/admin/login', async (req, res) => {
+    const { username, password } = req.body;
+    let connection;
 
-  
+    try {
+        // Establish a connection to the Oracle database
+        connection = await oracledb.getConnection(dbConfig);
+
+        // Query to check if the user is an admin with the provided credentials
+        const result = await connection.execute(
+            `SELECT username, password FROM admin WHERE username = :username AND password = :password`,
+            [username, password]
+        );
+
+        // If the user is found
+        if (result.rows.length > 0) {
+            // Since there is no 'role' column, we skip the role check and directly issue a token
+            const { username } = result.rows[0]; // We don't need 'user_id' or 'role' in this case
+
+            // Generate JWT token for the admin user
+            const token = jwt.sign({ username }, process.env.JWT_SECRET, { expiresIn: '1h' });
+            res.status(200).json({ token });
+        } else {
+            res.status(401).json({ message: 'Invalid credentials' });
+        }
+    } catch (err) {
+        console.error('Error during login', err);
+        res.status(500).json({ message: 'Internal Server Error' });
+    } finally {
+        // Close the database connection
+        if (connection) {
+            await connection.close();
+        }
+    }
+});
+
+
+
+
 // Start Server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
